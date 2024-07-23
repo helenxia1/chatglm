@@ -12,7 +12,9 @@
 
 import os
 
-from duckduckgo_search import ddg
+# from duckduckgo_search import ddg
+from langchain_community.document_loaders import PyPDFLoader
+
 from langchain.document_loaders import UnstructuredFileLoader
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
@@ -38,12 +40,22 @@ class SourceService(object):
                 loader = UnstructuredFileLoader(f'{self.docs_path}/{doc}', mode="elements")
                 doc = loader.load()
                 docs.extend(doc)
+            elif doc.endswith(".pdf"):
+                print(doc)
+                loader = PyPDFLoader(f'{self.docs_path}/{doc}')
+                docs = loader.load()
+        print(docs)
         self.vector_store = FAISS.from_documents(docs, self.embeddings)
         self.vector_store.save_local(self.vector_store_path)
 
     def add_document(self, document_path):
-        loader = UnstructuredFileLoader(document_path, mode="elements")
-        doc = loader.load()
+        doc = ''
+        if document_path.endswith('.txt'):
+            loader = UnstructuredFileLoader(document_path, mode="elements")
+            doc = loader.load()
+        elif document_path.endswith('.pdf'):
+            loader = PyPDFLoader(document_path)
+            doc = loader.load()
         self.vector_store.add_documents(doc)
         self.vector_store.save_local(self.vector_store_path)
 

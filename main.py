@@ -5,11 +5,10 @@ from app_modules.overwrites import postprocess
 from app_modules.presets import *
 from clc.langchain_application import LangChainApplication
 
-
 # 修改成自己的配置！！！
 class LangChainCFG:
-    llm_model_name = 'THUDM/chatglm-6b-int4-qe'  # 本地模型文件 or huggingface远程仓库
-    embedding_model_name = 'GanymedeNil/text2vec-large-chinese'  # 检索模型文件 or huggingface远程仓库
+    llm_model_name = '/home/xiaziyun/chatglm-6b-int4-qe'  # 本地模型文件 or huggingface远程仓库
+    embedding_model_name = '/home/xiaziyun/bge-large-zh-v1.5/'  # 检索模型文件 or huggingface远程仓库
     vector_store_path = './cache'
     docs_path = './docs'
     kg_vector_stores = {
@@ -18,11 +17,12 @@ class LangChainCFG:
         '初始化': './cache',
     }  # 可以替换成自己的知识库，如果没有需要设置为None
     # kg_vector_stores=None
-    patterns = ['模型问答', '知识库问答']  #
+    patterns = ['模型问答', '知识库问答']  
     n_gpus=1
 
 
 config = LangChainCFG()
+
 application = LangChainApplication(config)
 
 application.source_service.init_source_vector()
@@ -35,6 +35,8 @@ def get_file_list():
 
 file_list = get_file_list()
 
+application.source_service.add_document("/home/xiaziyun/Chinese-LangChain-master/docs/fudan.pdf")
+# file_list.insert(0, "post.pdf")
 
 def upload_file(file):
     if not os.path.exists("docs"):
@@ -42,8 +44,8 @@ def upload_file(file):
     filename = os.path.basename(file.name)
     shutil.move(file.name, "docs/" + filename)
     # file_list首位插入新上传的文件
-    file_list.insert(0, filename)
-    application.source_service.add_document("docs/" + filename)
+    # file_list.insert(0, filename)
+    # application.source_service.add_document("docs/" + filename)
     return gr.Dropdown.update(choices=file_list, value=filename)
 
 
@@ -219,11 +221,11 @@ with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
                        outputs=[message, chatbot, state, search])
 
 demo.queue(concurrency_count=2).launch(
-    server_name='0.0.0.0',
+    server_name='10.20.14.42',
     server_port=8888,
     share=False,
     show_error=True,
     debug=True,
     enable_queue=True,
-    inbrowser=True,
+    # inbrowser=True,
 )

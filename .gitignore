@@ -1,3 +1,6 @@
 .idea
 cache
 docs/zh_wikipedia
+clc/__pycache__
+**/condaenvs/**
+app_modules/__pycache__
