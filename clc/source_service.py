@@ -11,13 +11,16 @@
 """
 
 import os
+import docx2txt
 
 # from duckduckgo_search import ddg
 from langchain_community.document_loaders import PyPDFLoader
-
+from langchain.schema import Document
+from langchain.document_loaders import UnstructuredWordDocumentLoader
 from langchain.document_loaders import UnstructuredFileLoader
 from langchain.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
+
 
 
 class SourceService(object):
@@ -43,10 +46,27 @@ class SourceService(object):
             elif doc.endswith(".pdf"):
                 print(doc)
                 loader = PyPDFLoader(f'{self.docs_path}/{doc}')
-                docs = loader.load()
-        print(docs)
+                doc = loader.load()
+                docs.extend(doc)
+            elif doc.endswith(".docx"):
+                print(doc)
+                text = docx2txt.process(f'{self.docs_path}/{doc}')
+                print(text)
+                doc = [Document(page_content=text)]
+                # loader = UnstructuredWordDocumentLoader(f'{self.docs_path}/{doc}', mode="elements")
+                # doc = loader.load()
+                docs.extend(doc)
+            # elif doc.endswith("rel18"):
+            #     files = []
+            #     for file in os.listdir("/home/xiaziyun/Chinese-LangChain/docs/rel18"):
+            #         if file.endswith('.docx'):
+            #             text = docx2txt.process(f'{self.docs_path}/{doc}/{file}')
+            #             doc = [Document(page_content=text)]
+            #             docs.extend(doc)
+        # print(docs)
         self.vector_store = FAISS.from_documents(docs, self.embeddings)
         self.vector_store.save_local(self.vector_store_path)
+
 
     def add_document(self, document_path):
         doc = ''
@@ -56,6 +76,17 @@ class SourceService(object):
         elif document_path.endswith('.pdf'):
             loader = PyPDFLoader(document_path)
             doc = loader.load()
+        elif document_path.endswith(".docx"):
+            # loader = UnstructuredWordDocumentLoader(document_path, mode="elements")
+            # doc = loader.load()
+            text = docx2txt.process(f'{self.docs_path}/{doc}')
+            doc = [Document(page_content=text)]
+        # elif doc.endswith("rel18"):
+        #     files = []
+        #     for file in os.listdir("/home/xiaziyun/Chinese-LangChain/docs/rel18"):
+        #         if file.endswith('.docx'):
+        #             text = docx2txt.process(f'{self.docs_path}/{doc}/{file}')
+        #             doc = [Document(page_content=text)]
         self.vector_store.add_documents(doc)
         self.vector_store.save_local(self.vector_store_path)
 

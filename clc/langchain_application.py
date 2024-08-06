@@ -12,16 +12,22 @@
 from langchain.chains import RetrievalQA
 from langchain.prompts.prompt import PromptTemplate
 
+from transformers import Qwen2Model, Qwen2Config
 from clc.config import LangChainCFG
-from clc.gpt_service import ChatGLMService
+# from clc.gpt_service import ChatGLMService
 from clc.source_service import SourceService
+from transformers import Qwen2Model, Qwen2Config
+
 
 
 class LangChainApplication(object):
     def __init__(self, config):
         self.config = config
-        self.llm_service = ChatGLMService()
-        self.llm_service.load_model(model_name_or_path=self.config.llm_model_name)
+        # self.llm_service = ChatGLMService()
+        self.llm_service = QwenModelService()
+        self.llm_service.load_model()
+
+        # self.llm_service.load_model(model_name_or_path=self.config.llm_model_name)
         # self.llm_service.load_model_on_gpus(model_name_or_path=self.config.llm_model_name,num_gpus=self.config.n_gpus)
         self.source_service = SourceService(config)
 
@@ -59,22 +65,39 @@ class LangChainApplication(object):
                                             {question}"""
         prompt = PromptTemplate(template=prompt_template,
                                 input_variables=["context", "question"])
-        self.llm_service.history = chat_history[-history_len:] if history_len > 0 else []
+        
+        
 
-        self.llm_service.temperature = temperature
-        self.llm_service.top_p = top_p
+        retriever = self.source_service.vector_store.as_retriever(search_kwargs={"k": 4})
+        documents = retriever.get_relevant_documents(query)
 
-        knowledge_chain = RetrievalQA.from_llm(
-            llm=self.llm_service,
-            retriever=self.source_service.vector_store.as_retriever(
-                search_kwargs={"k": top_k}),
-            prompt=prompt)
-        knowledge_chain.combine_documents_chain.document_prompt = PromptTemplate(
-            input_variables=["page_content"], template="{page_content}")
+        context = "\n".join([doc.page_content for doc in documents])
+        
+        formatted_prompt = prompt.format(context=context, question=query)
+        self.llm_service.history = chat_history
+        # result = self.llm_service._call(formatted_prompt)
+        result = self.llm_service.generate_text(formatted_prompt)
 
-        knowledge_chain.return_source_documents = True
 
-        result = knowledge_chain({"query": query})
+
+        # self.llm_service.history = chat_history[-history_len:] if history_len > 0 else []
+
+        # self.llm_service.temperature = temperature
+        # self.llm_service.top_p = top_p
+
+        # knowledge_chain = RetrievalQA.from_llm(
+        #     llm=self.llm_service,
+        #     retriever=self.source_service.vector_store.as_retriever(
+        #         search_kwargs={"k": top_k}),
+        #     prompt=prompt)
+        # knowledge_chain.combine_documents_chain.document_prompt = PromptTemplate(
+        #     input_variables=["page_content"], template="{page_content}")
+
+        # knowledge_chain.return_source_documents = True
+
+        # result = knowledge_chain({"query": query})
+
+        print(result)
         return result
 
     def get_llm_answer(self, query='', web_content=''):

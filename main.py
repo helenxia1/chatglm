@@ -4,11 +4,26 @@ import shutil
 from app_modules.overwrites import postprocess
 from app_modules.presets import *
 from clc.langchain_application import LangChainApplication
+import time
+from transformers import Qwen2Model, Qwen2Config
+
 
 # 修改成自己的配置！！！
 class LangChainCFG:
-    llm_model_name = '/home/xiaziyun/chatglm-6b-int4-qe'  # 本地模型文件 or huggingface远程仓库
+    
+    llm_model_name = '/home/xiaziyun/Qwen2-0.5B'  # 本地模型文件 or huggingface远程仓库
     embedding_model_name = '/home/xiaziyun/bge-large-zh-v1.5/'  # 检索模型文件 or huggingface远程仓库
+    
+    localpath = '/home/xiaziyun/'
+    webpath = '/content/drive/MyDrive/project/Chinese-LangChain/resources/'
+    
+    if os.path.exists(webpath):
+        llm_model_name = '/content/drive/MyDrive/project/Chinese-LangChain/resources/chatglm-6b-int4-qe'  # 本地模型文件 or huggingface远程仓库
+        embedding_model_name = '/content/drive/MyDrive/project/Chinese-LangChain/resources/bge-large-zh-v1.5'  # 检索模型文件 or huggingface远程仓库
+    elif os.path.exists(localpath):
+        llm_model_name = '/home/xiaziyun/Qwen2-0.5B'
+        embedding_model_name = '/home/xiaziyun/bge-large-zh-v1.5'
+
     vector_store_path = './cache'
     docs_path = './docs'
     kg_vector_stores = {
@@ -21,11 +36,22 @@ class LangChainCFG:
     n_gpus=1
 
 
-config = LangChainCFG()
+# config = LangChainCFG()
+
+# application = LangChainApplication(config)
+
+config = Qwen2Config()
+
+model = Qwen2Model(config)
+
+config = model.config
 
 application = LangChainApplication(config)
 
 application.source_service.init_source_vector()
+
+
+
 
 def get_file_list():
     if not os.path.exists("docs"):
@@ -34,9 +60,16 @@ def get_file_list():
 
 
 file_list = get_file_list()
+doc_path = "/home/xiaziyun/Chinese-LangChain/docs/"
+docwebpath = "/content/drive/MyDrive/project/Chinese-LangChain/docs/"
 
-application.source_service.add_document("/home/xiaziyun/Chinese-LangChain-master/docs/fudan.pdf")
+# if os.path.exists(doc_path):
+#     application.source_service.add_document("/home/xiaziyun/Chinese-LangChain/docs/TeleQnA_training.txt")
+# elif os.path.exists(docwebpath):
+#     application.source_service.add_document("/content/drive/MyDrive/project/Chinese-LangChain/docs/TeleQnA_training.txt")
 # file_list.insert(0, "post.pdf")
+
+# application.source_service.add_document("/home/xiaziyun/Chinese-LangChain/docs/26.258-i00.docx")
 
 def upload_file(file):
     if not os.path.exists("docs"):
@@ -44,10 +77,9 @@ def upload_file(file):
     filename = os.path.basename(file.name)
     shutil.move(file.name, "docs/" + filename)
     # file_list首位插入新上传的文件
-    # file_list.insert(0, filename)
-    # application.source_service.add_document("docs/" + filename)
+    file_list.insert(0, filename)
+    application.source_service.add_document("docs/" + filename)
     return gr.Dropdown.update(choices=file_list, value=filename)
-
 
 def set_knowledge(kg_name, history):
     try:
@@ -106,126 +138,143 @@ def predict(input,
         return '', history, history, search_text
 
 
-with open("assets/custom.css", "r", encoding="utf-8") as f:
-    customCSS = f.read()
-with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
-    gr.Markdown("""<h1><center>Chinese-LangChain</center></h1>
-        <center><font size=3>
-        </center></font>
-        """)
-    state = gr.State()
 
-    with gr.Row():
-        with gr.Column(scale=1):
-            embedding_model = gr.Dropdown([
-                "text2vec-base"
-            ],
-                label="Embedding model",
-                value="text2vec-base")
+# input = ''
+# path = '/home/xiaziyun/Chinese-LangChain/docs/added/TeleQnA_testing1.txt'
+# data = open(path, 'r').read()
+# question = data.split('}')
 
-            large_language_model = gr.Dropdown(
-                [
-                    "ChatGLM-6B-int4",
-                ],
-                label="large language model",
-                value="ChatGLM-6B-int4")
+# for i in question:
+#     input = list[i]
+#     string = str(input)
 
-            top_k = gr.Slider(1,
-                              20,
-                              value=4,
-                              step=1,
-                              label="检索top-k文档",
-                              interactive=True)
+input = '姚明简介'
+predict(input, "Qwen2-0.5B", "text2vec-base", 4, "不使用", '知识库问答')
+    
 
-            use_web = gr.Radio(["使用", "不使用"], label="web search",
-                               info="是否使用网络搜索，使用时确保网络通常",
-                               value="不使用"
-                               )
-            use_pattern = gr.Radio(
-                [
-                    '模型问答',
-                    '知识库问答',
-                ],
-                label="模式",
-                value='模型问答',
-                interactive=True)
 
-            kg_name = gr.Radio(list(config.kg_vector_stores.keys()),
-                               label="知识库",
-                               value=None,
-                               info="使用知识库问答，请加载知识库",
-                               interactive=True)
-            set_kg_btn = gr.Button("加载知识库")
+# with open("assets/custom.css", "r", encoding="utf-8") as f:
+#     customCSS = f.read()
+# with gr.Blocks(css=customCSS, theme=small_and_beautiful_theme) as demo:
+#     gr.Markdown("""<h1><center>Chinese-LangChain</center></h1>
+#         <center><font size=3>
+#         </center></font>
+#         """)
+#     state = gr.State()
 
-            file = gr.File(label="将文件上传到知识库库，内容要尽量匹配",
-                           visible=True,
-                           file_types=['.txt', '.md', '.docx', '.pdf']
-                           )
+#     with gr.Row():
+#         with gr.Column(scale=1):
+#             embedding_model = gr.Dropdown([
+#                 "text2vec-base"
+#             ],
+#                 label="Embedding model",
+#                 value="text2vec-base")
 
-        with gr.Column(scale=4):
-            with gr.Row():
-                chatbot = gr.Chatbot(label='Chinese-LangChain').style(height=400)
-            with gr.Row():
-                message = gr.Textbox(label='请输入问题')
-            with gr.Row():
-                clear_history = gr.Button("🧹 清除历史对话")
-                send = gr.Button("🚀 发送")
-            with gr.Row():
-                gr.Markdown("""提醒：<br>
-                                        [Chinese-LangChain](https://github.com/yanqiangmiffy/Chinese-LangChain) <br>
-                                        有任何使用问题[Github Issue区](https://github.com/yanqiangmiffy/Chinese-LangChain)进行反馈. <br>
-                                        """)
-        with gr.Column(scale=2):
-            search = gr.Textbox(label='搜索结果')
+#             large_language_model = gr.Dropdown(
+#                 [
+#                     "ChatGLM-6B-int4",
+#                 ],
+#                 label="large language model",
+#                 value="ChatGLM-6B-int4")
 
-        # ============= 触发动作=============
-        file.upload(upload_file,
-                    inputs=file,
-                    outputs=None)
-        set_kg_btn.click(
-            set_knowledge,
-            show_progress=True,
-            inputs=[kg_name, chatbot],
-            outputs=chatbot
-        )
-        # 发送按钮 提交
-        send.click(predict,
-                   inputs=[
-                       message,
-                       large_language_model,
-                       embedding_model,
-                       top_k,
-                       use_web,
-                       use_pattern,
-                       state
-                   ],
-                   outputs=[message, chatbot, state, search])
+#             top_k = gr.Slider(1,
+#                               20,
+#                               value=4,
+#                               step=1,
+#                               label="检索top-k文档",
+#                               interactive=True)
 
-        # 清空历史对话按钮 提交
-        clear_history.click(fn=clear_session,
-                            inputs=[],
-                            outputs=[chatbot, state],
-                            queue=False)
+#             use_web = gr.Radio(["使用", "不使用"], label="web search",
+#                                info="是否使用网络搜索，使用时确保网络通常",
+#                                value="不使用"
+#                                )
+#             use_pattern = gr.Radio(
+#                 [
+#                     '模型问答',
+#                     '知识库问答',
+#                 ],
+#                 label="模式",
+#                 value='模型问答',
+#                 interactive=True)
 
-        # 输入框 回车
-        message.submit(predict,
-                       inputs=[
-                           message,
-                           large_language_model,
-                           embedding_model,
-                           top_k,
-                           use_web,
-                           use_pattern,
-                           state
-                       ],
-                       outputs=[message, chatbot, state, search])
+#             kg_name = gr.Radio(list(config.kg_vector_stores.keys()),
+#                                label="知识库",
+#                                value=None,
+#                                info="使用知识库问答，请加载知识库",
+#                                interactive=True)
+#             set_kg_btn = gr.Button("加载知识库")
 
-demo.queue(concurrency_count=2).launch(
-    server_name='10.20.14.42',
-    server_port=8888,
-    share=False,
-    show_error=True,
-    debug=True,
-    enable_queue=True,
-    # inbrowser=True,
-)
+#             file = gr.File(label="将文件上传到知识库库，内容要尽量匹配",
+#                            visible=True,
+#                            file_types=['.txt', '.md', '.docx', '.pdf']
+#                            )
+
+#         with gr.Column(scale=4):
+#             with gr.Row():
+#                 chatbot = gr.Chatbot(label='Chinese-LangChain').style(height=400)
+#             with gr.Row():
+#                 message = gr.Textbox(label='请输入问题')
+#             with gr.Row():
+#                 clear_history = gr.Button("🧹 清除历史对话")
+#                 send = gr.Button("🚀 发送")
+#             with gr.Row():
+#                 gr.Markdown("""提醒：<br>
+#                                         [Chinese-LangChain](https://github.com/yanqiangmiffy/Chinese-LangChain) <br>
+#                                         有任何使用问题[Github Issue区](https://github.com/yanqiangmiffy/Chinese-LangChain)进行反馈. <br>
+#                                         """)
+#         with gr.Column(scale=2):
+#             search = gr.Textbox(label='搜索结果')
+
+#         # ============= 触发动作=============
+#         file.upload(upload_file,
+#                     inputs=file,
+#                     outputs=None)
+#         set_kg_btn.click(
+#             set_knowledge,
+#             show_progress=True,
+#             inputs=[kg_name, chatbot],
+#             outputs=chatbot
+#         )
+#         # 发送按钮 提交
+#         send.click(predict,
+#                    inputs=[
+#                        message,
+#                        large_language_model,
+#                        embedding_model,
+#                        top_k,
+#                        use_web,
+#                        use_pattern,
+#                        state
+#                    ],
+#                    outputs=[message, chatbot, state, search])
+
+#         # 清空历史对话按钮 提交
+#         clear_history.click(fn=clear_session,
+#                             inputs=[],
+#                             outputs=[chatbot, state],
+#                             queue=False)
+
+#         # 输入框 回车
+#         message.submit(predict,
+#                        inputs=[
+#                            message,
+#                            large_language_model,
+#                            embedding_model,
+#                            top_k,
+#                            use_web,
+#                            use_pattern,
+#                            state
+#                        ],
+#                        outputs=[message, chatbot, state, search])
+
+# demo.queue(concurrency_count=2).launch(
+#     server_name='0.0.0.0',
+#     server_port=8888,
+#     share=False,
+#     show_error=True,
+#     debug=True,
+#     enable_queue=True,
+#     # inbrowser=True,
+# )
+
+
