@@ -15,6 +15,7 @@ from langchain.prompts.prompt import PromptTemplate
 from transformers import Qwen2Model, Qwen2Config
 from clc.config import LangChainCFG
 # from clc.gpt_service import ChatGLMService
+from clc.gpt_service import QwenModelService
 from clc.source_service import SourceService
 from transformers import Qwen2Model, Qwen2Config
 
@@ -24,7 +25,7 @@ class LangChainApplication(object):
     def __init__(self, config):
         self.config = config
         # self.llm_service = ChatGLMService()
-        self.llm_service = QwenModelService()
+        self.llm_service = QwenModelService(config.llm_model_name)
         self.llm_service.load_model()
 
         # self.llm_service.load_model(model_name_or_path=self.config.llm_model_name)
@@ -98,6 +99,7 @@ class LangChainApplication(object):
         # result = knowledge_chain({"query": query})
 
         print(result)
+        exit()
         return result
 
     def get_llm_answer(self, query='', web_content=''):

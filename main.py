@@ -11,18 +11,18 @@ from transformers import Qwen2Model, Qwen2Config
 # 修改成自己的配置！！！
 class LangChainCFG:
     
-    llm_model_name = '/home/xiaziyun/Qwen2-0.5B'  # 本地模型文件 or huggingface远程仓库
-    embedding_model_name = '/home/xiaziyun/bge-large-zh-v1.5/'  # 检索模型文件 or huggingface远程仓库
+    llm_model_name = '/home/maojingwei/project/Qwen2-0.5B'  # 本地模型文件 or huggingface远程仓库
+    embedding_model_name = '/home/maojingwei/project/bge-large-zh-v1.5/'  # 检索模型文件 or huggingface远程仓库
     
-    localpath = '/home/xiaziyun/'
+    localpath = '/home/maojingwei/project/'
     webpath = '/content/drive/MyDrive/project/Chinese-LangChain/resources/'
     
     if os.path.exists(webpath):
         llm_model_name = '/content/drive/MyDrive/project/Chinese-LangChain/resources/chatglm-6b-int4-qe'  # 本地模型文件 or huggingface远程仓库
         embedding_model_name = '/content/drive/MyDrive/project/Chinese-LangChain/resources/bge-large-zh-v1.5'  # 检索模型文件 or huggingface远程仓库
     elif os.path.exists(localpath):
-        llm_model_name = '/home/xiaziyun/Qwen2-0.5B'
-        embedding_model_name = '/home/xiaziyun/bge-large-zh-v1.5'
+        llm_model_name = '/home/maojingwei/project/Qwen2-0.5B'
+        embedding_model_name = '/home/maojingwei/project/bge-large-zh-v1.5'
 
     vector_store_path = './cache'
     docs_path = './docs'
@@ -36,15 +36,15 @@ class LangChainCFG:
     n_gpus=1
 
 
-# config = LangChainCFG()
+config = LangChainCFG()
 
 # application = LangChainApplication(config)
 
-config = Qwen2Config()
+# config = Qwen2Config()
 
-model = Qwen2Model(config)
+# model = Qwen2Model(config)
 
-config = model.config
+# config = model.config
 
 application = LangChainApplication(config)
 
@@ -60,16 +60,16 @@ def get_file_list():
 
 
 file_list = get_file_list()
-doc_path = "/home/xiaziyun/Chinese-LangChain/docs/"
+doc_path = "/home/maojingwei/project/Chinese-LangChain/docs/"
 docwebpath = "/content/drive/MyDrive/project/Chinese-LangChain/docs/"
 
 # if os.path.exists(doc_path):
-#     application.source_service.add_document("/home/xiaziyun/Chinese-LangChain/docs/TeleQnA_training.txt")
+#     application.source_service.add_document("/home/maojingwei/project/Chinese-LangChain/docs/TeleQnA_training.txt")
 # elif os.path.exists(docwebpath):
 #     application.source_service.add_document("/content/drive/MyDrive/project/Chinese-LangChain/docs/TeleQnA_training.txt")
 # file_list.insert(0, "post.pdf")
 
-# application.source_service.add_document("/home/xiaziyun/Chinese-LangChain/docs/26.258-i00.docx")
+# application.source_service.add_document("/home/maojingwei/project/Chinese-LangChain/docs/26.258-i00.docx")
 
 def upload_file(file):
     if not os.path.exists("docs"):
@@ -140,7 +140,7 @@ def predict(input,
 
 
 # input = ''
-# path = '/home/xiaziyun/Chinese-LangChain/docs/added/TeleQnA_testing1.txt'
+# path = '/home/maojingwei/project/Chinese-LangChain/docs/added/TeleQnA_testing1.txt'
 # data = open(path, 'r').read()
 # question = data.split('}')
 
