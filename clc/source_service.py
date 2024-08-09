@@ -65,6 +65,7 @@ class SourceService(object):
             #             docs.extend(doc)
         # print(docs)
         self.vector_store = FAISS.from_documents(docs, self.embeddings)
+        exit("done")
         self.vector_store.save_local(self.vector_store_path)
 
 

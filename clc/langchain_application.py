@@ -14,10 +14,12 @@ from langchain.prompts.prompt import PromptTemplate
 
 from transformers import Qwen2Model, Qwen2Config
 from clc.config import LangChainCFG
-# from clc.gpt_service import ChatGLMService
-from clc.gpt_service import QwenModelService
+from clc.gpt_service import ChatGLMService
+# from clc.gpt_service import QwenModelService
 from clc.source_service import SourceService
 from transformers import Qwen2Model, Qwen2Config
+from transformers import AutoTokenizer, AutoModelForCausalLM
+from langchain.llms.utils import enforce_stop_tokens
 
 
 
@@ -25,10 +27,20 @@ class LangChainApplication(object):
     def __init__(self, config):
         self.config = config
         # self.llm_service = ChatGLMService()
-        self.llm_service = QwenModelService(config.llm_model_name)
-        self.llm_service.load_model()
+        # self.llm_service = QwenModelService(config.llm_model_name)
+        # self.llm_service.load_model()
 
         # self.llm_service.load_model(model_name_or_path=self.config.llm_model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            "/home/maojingwei/project/Qwen2-0.5B",
+            trust_remote_code=True
+        )
+        self.model = AutoModelForCausalLM.from_pretrained("/home/maojingwei/project/Qwen2-0.5B", trust_remote_code=True).half().cuda()
+        self.model = self.model.eval()
+        self.max_token = 128  # Define max_token or retrieve from config
+        self.history = []
+
+
         # self.llm_service.load_model_on_gpus(model_name_or_path=self.config.llm_model_name,num_gpus=self.config.n_gpus)
         self.source_service = SourceService(config)
 
@@ -75,9 +87,29 @@ class LangChainApplication(object):
         context = "\n".join([doc.page_content for doc in documents])
         
         formatted_prompt = prompt.format(context=context, question=query)
-        self.llm_service.history = chat_history
+        
+        # self.llm_service.history = chat_history
         # result = self.llm_service._call(formatted_prompt)
-        result = self.llm_service.generate_text(formatted_prompt)
+        stop = None
+        inputs = self.tokenizer(formatted_prompt, return_tensors='pt').to('cuda')
+        outputs = self.model.generate(
+            inputs.input_ids,
+            max_length = self.max_token,
+            do_sample = True
+        )
+        response = self.tokenizer.decode(outputs[0], skip_special_tokens=True
+        )
+
+        if stop is not None:
+            response = enforce_stop_tokens(response, stop)
+
+        self.history = self.history + [[None, response]]
+        print(response)
+
+ 
+    
+
+        # result = self.llm_service.generate_text(formatted_prompt)
 
 
 
@@ -98,7 +130,7 @@ class LangChainApplication(object):
 
         # result = knowledge_chain({"query": query})
 
-        print(result)
+        # print(result)
         exit()
         return result
 
